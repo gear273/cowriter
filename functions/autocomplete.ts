@@ -6,19 +6,25 @@ export default async function handler(req: Request, res: Response) {
     return res.status(405).json({ error: "Method Not Allowed" });
   }
 
+  if (!req.body?.prompt) {
+    return res.status(400).json({ error: 'Missing parameter "prompt"' });
+  }
+
   try {
     const { data } = await openai.createCompletion({
-      model: "davinci",
+      model: "text-curie-001",
       n: 1,
-      max_tokens: 256,
-      temperature: 0.7,
+      max_tokens: 300,
+      temperature: 0.5,
       stop: ".",
       prompt: req.body.prompt,
-      best_of: 3,
+      best_of: 4,
     });
 
-    return res.status(200).json(data);
+    return res.status(200).json({ suggestion: data.choices[0]?.text || null });
   } catch (error) {
+    console.error(error);
+
     return res
       .status(error?.response?.status || 500)
       .json({ error: error.message });
