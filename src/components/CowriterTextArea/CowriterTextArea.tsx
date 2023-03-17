@@ -38,6 +38,7 @@ export default function CowriterTextArea({
   const [text, setText] = useState<string>("");
   const [suggestion, setSuggestion] = useState<string | null>(null);
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   const debouncedChange = useCallback(
     debounce(async (newPrompt: string) => {
       if (!newPrompt) {
