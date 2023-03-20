@@ -49,6 +49,10 @@ export default async function handler(req: Request, res: Response) {
     return res.status(405).json({ error: "Method Not Allowed" });
   }
 
+  if (req.method === "OPTIONS") {
+    return res.status(200).end();
+  }
+
   if (!req.body?.prompt) {
     return res.status(400).json({ error: 'Missing parameter "prompt"' });
   }
