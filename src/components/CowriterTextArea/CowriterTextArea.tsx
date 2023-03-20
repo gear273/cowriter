@@ -26,6 +26,22 @@ export interface CowriterTextAreaProps
   debounceTime?: number;
 }
 
+function mergePromptWithSuggestion(prompt: string, suggestion: string) {
+  if (!prompt) {
+    return "";
+  }
+
+  if (!suggestion) {
+    return prompt;
+  }
+
+  return `${
+    prompt.endsWith(" ") && !suggestion.startsWith(",") ? prompt : `${prompt} `
+  }${suggestion}${
+    suggestion.endsWith("!") || suggestion.endsWith("?") ? "" : "."
+  }`;
+}
+
 function CowriterTextArea(
   {
     className,
@@ -40,29 +56,20 @@ function CowriterTextArea(
   const [prompt, setPrompt] = useState<string>("");
   const [text, setText] = useState<string>("");
   const [suggestion, setSuggestion] = useState<string>("");
-
-  const textWithSuggestion =
-    prompt && suggestion
-      ? `${prompt.endsWith(" ") ? prompt : `${prompt} `}${suggestion
-          .replace(/^(\n)+/i, "")
-          .replace(/(\n)+/i, "\n")}${
-          suggestion.endsWith("!") || suggestion.endsWith("?") ? "" : "."
-        }`
-      : "";
+  const textWithSuggestion = mergePromptWithSuggestion(prompt, suggestion);
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const debouncedChange = useCallback(
     debounce(async (newPrompt: string) => {
       if (!newPrompt) {
         setSuggestion("");
+
         return;
       }
 
-      const lastPromptSection = newPrompt.split(/\n+/).filter(Boolean).pop();
-
       const { res, error } = await client.functions.call<{
         suggestion: string;
-      }>("/autocomplete", { prompt: lastPromptSection });
+      }>("/autocomplete", { prompt: newPrompt });
 
       if (error) {
         console.error(error);
@@ -88,6 +95,14 @@ function CowriterTextArea(
 
     setText(event.target.value);
     setPrompt(event.target.value);
+
+    if (
+      !suggestion.startsWith(
+        event.target.value.charAt(event.target.value.length - 1)
+      )
+    ) {
+      setSuggestion("");
+    }
   }
 
   function handleKeyDown(event: KeyboardEvent<HTMLTextAreaElement>) {
