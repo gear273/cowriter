@@ -3,11 +3,12 @@ import debounce from "lodash.debounce";
 import {
   ChangeEvent,
   DetailedHTMLProps,
+  ForwardedRef,
+  forwardRef,
   KeyboardEvent,
   TextareaHTMLAttributes,
   useCallback,
   useEffect,
-  useRef,
   useState,
 } from "react";
 import { twMerge } from "tailwind-merge";
@@ -25,29 +26,43 @@ export interface CowriterTextAreaProps
   debounceTime?: number;
 }
 
-export default function CowriterTextArea({
-  className,
-  onChange,
-  onKeyDown,
-  debounceTime = 750,
-  ...props
-}: CowriterTextAreaProps) {
+function CowriterTextArea(
+  {
+    className,
+    onChange,
+    onKeyDown,
+    debounceTime = 750,
+    ...props
+  }: CowriterTextAreaProps,
+  ref: ForwardedRef<HTMLTextAreaElement>
+) {
   const client = useNhostClient();
-  const ref = useRef<HTMLTextAreaElement>(null);
   const [prompt, setPrompt] = useState<string>("");
   const [text, setText] = useState<string>("");
-  const [suggestion, setSuggestion] = useState<string | null>(null);
+  const [suggestion, setSuggestion] = useState<string>("");
+
+  const textWithSuggestion =
+    prompt && suggestion
+      ? `${prompt.endsWith(" ") ? prompt : `${prompt} `}${suggestion
+          .replace(/^(\n)+/i, "")
+          .replace(/(\n)+/i, "\n")}${
+          suggestion.endsWith("!") || suggestion.endsWith("?") ? "" : "."
+        }`
+      : "";
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const debouncedChange = useCallback(
     debounce(async (newPrompt: string) => {
       if (!newPrompt) {
+        setSuggestion("");
         return;
       }
 
+      const lastPromptSection = newPrompt.split(/\n+/).filter(Boolean).pop();
+
       const { res, error } = await client.functions.call<{
         suggestion: string;
-      }>("/autocomplete", { prompt: newPrompt });
+      }>("/autocomplete", { prompt: lastPromptSection });
 
       if (error) {
         console.error(error);
@@ -55,7 +70,7 @@ export default function CowriterTextArea({
         return;
       }
 
-      setSuggestion(res?.data?.suggestion);
+      setSuggestion(res?.data?.suggestion || "");
     }, debounceTime),
     [client.functions, debounceTime]
   );
@@ -81,17 +96,31 @@ export default function CowriterTextArea({
     if (event.key === "Tab") {
       event.preventDefault();
 
-      setText((currentPrompt) => `${currentPrompt}${suggestion ?? ""}.`);
-      setSuggestion(null);
+      setText(textWithSuggestion);
+      setSuggestion("");
     }
   }
 
   return (
-    <div>
+    <div className="relative w-full h-40">
+      <textarea
+        className={twMerge(
+          "absolute top-0 left-0 right-0 bottom-0 resize-none rounded-md",
+          "border-2 border-transparent p-2 text-gray-400",
+          "focus:outline-none"
+        )}
+        readOnly
+        {...props}
+        value={textWithSuggestion}
+      />
+
       <textarea
         ref={ref}
         className={twMerge(
-          "border-2 rounded-md resize-none border-gray-300 focus:border-blue-500 focus:outline-none motion-safe:transition-colors p-2",
+          "absolute top-0 left-0 right-0 rounded-md bottom-0 bg-transparent p-2 resize-none",
+          "motion-safe:transition-colors",
+          "border-2 border-gray-300",
+          "focus:border-blue-500 focus:outline-none",
           className
         )}
         onChange={handleChange}
@@ -99,8 +128,7 @@ export default function CowriterTextArea({
         {...props}
         value={text}
       />
-
-      {suggestion ? <p>Suggestion: {suggestion}</p> : null}
     </div>
   );
 }
+export default forwardRef(CowriterTextArea);
