@@ -65,10 +65,6 @@ function capitalizeString(string: string) {
   return string.charAt(0).toUpperCase() + string.slice(1);
 }
 
-function uncapitalizeString(string: string) {
-  return string.charAt(0).toLowerCase() + string.slice(1);
-}
-
 function CowriterTextArea(
   {
     className,
@@ -116,7 +112,7 @@ function CowriterTextArea(
         return;
       }
 
-      setSuggestion(uncapitalizeString(suggestion));
+      setSuggestion(suggestion);
     }, debounceTime),
     [client.functions, debounceTime]
   );
@@ -156,6 +152,32 @@ function CowriterTextArea(
 
     if (event.key === "Tab") {
       event.preventDefault();
+
+      // TODO: Rework this to not remove trailing new lines
+      // What's needed here is basically the following:
+      // 1. We add a period to the prompt if it doesn't end with one (or a question mark or an exclamation mark) and the suggestion starts with a capital letter
+      // 2. We add a space after the period
+      // 3. We add the suggestion
+      // 4. We add a period if the suggestion doesn't end with one (or a question mark or an exclamation mark)
+      // 5. We trim the text
+      if (suggestion.charAt(0) === suggestion.charAt(0).toUpperCase()) {
+        const trimmedPrompt = prompt.trim();
+        const promptEndsWithTerminator =
+          trimmedPrompt.endsWith(".") ||
+          trimmedPrompt.endsWith("!") ||
+          trimmedPrompt.endsWith("?");
+
+        setText(
+          `${
+            !promptEndsWithTerminator ? `${trimmedPrompt}. ` : trimmedPrompt
+          } ${suggestion}${
+            suggestion.endsWith("!") || suggestion.endsWith("?") ? "" : "."
+          }`.trim()
+        );
+        setSuggestion("");
+
+        return;
+      }
 
       setText(textWithSuggestion);
       setSuggestion("");
