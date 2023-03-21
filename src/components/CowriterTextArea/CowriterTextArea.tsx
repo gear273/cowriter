@@ -132,9 +132,23 @@ function CowriterTextArea(
   function handleChange(event: ChangeEvent<HTMLTextAreaElement>) {
     onChange?.(event);
 
-    setText(event.target.value);
-    setPrompt(event.target.value);
-    setSuggestion(excludePromptFromSuggestion(event.target.value, suggestion));
+    const updatedValue = event.target.value;
+
+    setText(updatedValue);
+    setPrompt(updatedValue);
+
+    const updatedSuggestion = excludePromptFromSuggestion(
+      updatedValue,
+      suggestion
+    );
+
+    if (!suggestion.startsWith(updatedValue.charAt(updatedValue.length - 1))) {
+      setSuggestion("");
+
+      return;
+    }
+
+    setSuggestion(updatedSuggestion);
   }
 
   function handleKeyDown(event: KeyboardEvent<HTMLTextAreaElement>) {
