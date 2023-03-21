@@ -26,6 +26,27 @@ export interface CowriterTextAreaProps
   debounceTime?: number;
 }
 
+function excludePromptFromSuggestion(prompt: string, suggestion: string) {
+  const lowerPrompt = prompt.toLowerCase();
+  const lowerSuggestion = suggestion.toLowerCase();
+  let index = 0;
+
+  // Iterate over the characters in the lowercased suggestion and compare them with the characters in the lowercased prompt
+  for (let i = 0; i < lowerSuggestion.length; i++) {
+    const suggestionSubstring = lowerSuggestion.substring(0, i + 1);
+    const promptEndSubstring = lowerPrompt.substring(
+      lowerPrompt.length - i - 1
+    );
+
+    if (suggestionSubstring === promptEndSubstring) {
+      index = i + 1;
+    }
+  }
+
+  // Return the remaining part of the original suggestion
+  return suggestion.substring(index);
+}
+
 function mergePromptWithSuggestion(prompt: string, suggestion: string) {
   if (!prompt) {
     return "";
@@ -35,11 +56,17 @@ function mergePromptWithSuggestion(prompt: string, suggestion: string) {
     return prompt;
   }
 
-  return `${
-    prompt.endsWith(" ") && !suggestion.startsWith(",") ? prompt : `${prompt} `
-  }${suggestion}${
+  return `${prompt}${suggestion}${
     suggestion.endsWith("!") || suggestion.endsWith("?") ? "" : "."
   }`;
+}
+
+function capitalizeString(string: string) {
+  return string.charAt(0).toUpperCase() + string.slice(1);
+}
+
+function uncapitalizeString(string: string) {
+  return string.charAt(0).toLowerCase() + string.slice(1);
 }
 
 function CowriterTextArea(
@@ -77,7 +104,19 @@ function CowriterTextArea(
         return;
       }
 
-      setSuggestion(res?.data?.suggestion || "");
+      const suggestion = res?.data?.suggestion || "";
+      const trimmedNewPrompt = newPrompt.trim();
+
+      if (
+        trimmedNewPrompt.endsWith(".") ||
+        trimmedNewPrompt.endsWith("!") ||
+        trimmedNewPrompt.endsWith("?")
+      ) {
+        setSuggestion(capitalizeString(suggestion));
+        return;
+      }
+
+      setSuggestion(uncapitalizeString(suggestion));
     }, debounceTime),
     [client.functions, debounceTime]
   );
@@ -95,14 +134,7 @@ function CowriterTextArea(
 
     setText(event.target.value);
     setPrompt(event.target.value);
-
-    if (
-      !suggestion.startsWith(
-        event.target.value.charAt(event.target.value.length - 1)
-      )
-    ) {
-      setSuggestion("");
-    }
+    setSuggestion(excludePromptFromSuggestion(event.target.value, suggestion));
   }
 
   function handleKeyDown(event: KeyboardEvent<HTMLTextAreaElement>) {
