@@ -1,5 +1,7 @@
 # Cowriter
 
+Cowriter is inspired by [Copilot](https://copilot.github.com/) and utilizes [OpenAI's Completions API](https://platform.openai.com/docs/api-reference/completions) to provide intelligent suggestions, improving productivity and creativity. It is built with [Next.js](https://nextjs.org/) and [Nhost](https://nhost.io/).
+
 ## Prerequisites
 
 - [An Nhost project](https://docs.nhost.io/)
