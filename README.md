@@ -1,38 +1,64 @@
-This is a [Next.js](https://nextjs.org/) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+# Cowriter
 
-## Getting Started
+## Prerequisites
 
-First, run the development server:
+- [An Nhost project](https://docs.nhost.io/)
+- [An OpenAI API key](https://platform.openai.com/docs/introduction/key-concepts)
+- [Docker](https://docs.docker.com/get-docker/)
+- [Nhost CLI](https://docs.nhost.io/cli)
+
+## Setup
+
+First, set up the environment variables in the `.env.development` file for the Nhost backend.
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
+MOCK_ENABLED=true
+OPENAI_API_ORG=<your-openai-org-id>
+OPENAI_API_KEY=<your-openai-api-key>
+ALLOWED_ORIGIN=*
+NEXT_PUBLIC_NHOST_SUBDOMAIN=<your-nhost-subdomain>
+NEXT_PUBLIC_NHOST_REGION=<your-nhost-region>
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+- `MOCK_ENABLED` is used to enable/disable the mock API. If set to `true`, the mock API will be used instead of the real OpenAI API, so you don't have to pay for the API calls.
+- `OPENAI_API_ORG` is the OpenAI organization ID.
+- `OPENAI_API_KEY` is the OpenAI API key.
+- `ALLOWED_ORIGIN` is the origin of the frontend application. This is used to enable CORS. You can set it to `*` to allow all origins.
+- `NEXT_PUBLIC_NHOST_SUBDOMAIN` is the subdomain of your Nhost project.
+- `NEXT_PUBLIC_NHOST_REGION` is the region of your Nhost project.
 
-You can start editing the page by modifying `pages/index.tsx`. The page auto-updates as you edit the file.
+If you want to connect to your local Nhost backend, you can set the `NEXT_PUBLIC_NHOST_SUBDOMAIN` to `local` and leave the `NEXT_PUBLIC_NHOST_REGION` empty.
 
-[API routes](https://nextjs.org/docs/api-routes/introduction) can be accessed on [http://localhost:3000/api/hello](http://localhost:3000/api/hello). This endpoint can be edited in `pages/api/hello.ts`.
+## Getting started
 
-The `pages/api` directory is mapped to `/api/*`. Files in this directory are treated as [API routes](https://nextjs.org/docs/api-routes/introduction) instead of React pages.
+First, run the Nhost backend:
 
-This project uses [`next/font`](https://nextjs.org/docs/basic-features/font-optimization) to automatically optimize and load Inter, a custom Google Font.
+```bash
+nhost dev
+```
 
-## Learn More
+You should see the following output:
 
-To learn more about Next.js, take a look at the following resources:
+```bash
+URLs:
+- Postgres:             postgres://postgres:postgres@local.db.nhost.run:5432/postgres
+- Hasura:               https://local.hasura.nhost.run
+- GraphQL:              https://local.graphql.nhost.run/v1
+- Auth:                 https://local.auth.nhost.run/v1
+- Storage:              https://local.storage.nhost.run/v1
+- Functions:            https://local.functions.nhost.run/v1
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- Dashboard:            http://localhost:3030
+- Mailhog:              http://localhost:8025
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js/) - your feedback and contributions are welcome!
+- subdomain:            local
+- region:               (empty)
+```
 
-## Deploy on Vercel
+Then, run the frontend:
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+```bash
+yarn dev
+```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/deployment) for more details.
+You can open the frontend at http://localhost:3000 by default.
