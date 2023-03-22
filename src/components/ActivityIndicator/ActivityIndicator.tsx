@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState } from 'react';
 
 export interface ActivityIndicatorProps {
   /**
@@ -31,7 +31,7 @@ export default function ActivityIndicator({
 
   return (
     <div
-      className="grid grid-flow-col gap-2 justify-start"
+      className="grid grid-flow-col justify-start gap-2"
       role="progressbar"
       aria-label={label}
     >
@@ -39,7 +39,7 @@ export default function ActivityIndicator({
         xmlns="http://www.w3.org/2000/svg"
         fill="none"
         viewBox="0 0 24 24"
-        className="animate-spin h-4 w-4"
+        className="h-4 w-4 animate-spin"
       >
         <circle
           cx="12"

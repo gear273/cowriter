@@ -1,6 +1,6 @@
-import "@/styles/globals.css";
-import { NhostClient, NhostProvider } from "@nhost/nextjs";
-import type { AppProps } from "next/app";
+import '@/styles/globals.css';
+import { NhostClient, NhostProvider } from '@nhost/nextjs';
+import type { AppProps } from 'next/app';
 
 const nhost = new NhostClient({
   subdomain: process.env.NEXT_PUBLIC_NHOST_SUBDOMAIN,

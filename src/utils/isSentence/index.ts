@@ -1,1 +1,1 @@
-export { default as isSentence } from "./isSentence";
+export { default as isSentence } from './isSentence';

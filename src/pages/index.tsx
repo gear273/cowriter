@@ -1,5 +1,6 @@
-import { CowriterTextArea } from "@/components/CowriterTextArea";
-import Head from "next/head";
+import { CodeBlock } from '@/components/CodeBlock';
+import { CowriterTextArea } from '@/components/CowriterTextArea';
+import Head from 'next/head';
 
 export default function Home() {
   return (
@@ -8,16 +9,27 @@ export default function Home() {
         <title>Cowriter</title>
       </Head>
 
-      <div className="max-w-7xl w-full mx-auto px-4">
-        <h1 className="text-2xl font-semibold">Cowriter</h1>
+      <div className="mx-auto grid w-full max-w-7xl grid-flow-row gap-5 px-4">
+        <section className="grid grid-flow-row gap-2">
+          <h1 className="text-3xl font-semibold">Cowriter</h1>
 
-        <p className="my-2">
-          Use this text area below to test Cowriter&apos;s capabilities. Press{" "}
-          <code className="bg-gray-700 text-white text-opacity-70 rounded-md text-xs p-1">
-            Tab
-          </code>{" "}
-          to add the current suggestion to the text area.
-        </p>
+          <p>Use the text area below to test Cowriter&apos;s capabilities.</p>
+        </section>
+
+        <section className="grid grid-flow-row gap-2">
+          <h2 className="text-xl font-semibold">User Manual</h2>
+
+          <ul className="grid list-disc grid-flow-row gap-2 pl-6">
+            <li>
+              If you are on desktop, press <CodeBlock>Tab</CodeBlock> to accept
+              the current suggestion.
+            </li>
+            <li>
+              If you are on mobile, tap the <CodeBlock>Accept</CodeBlock> button
+              to accept the current suggestion.
+            </li>
+          </ul>
+        </section>
 
         <CowriterTextArea className="w-full" />
       </div>

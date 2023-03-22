@@ -1,6 +1,10 @@
-import { isSentence } from "@/utils/isSentence";
-import { useNhostClient } from "@nhost/nextjs";
-import debounce from "lodash.debounce";
+import { ActivityIndicator } from '@/components/ActivityIndicator'
+import { capitalizeString } from '@/utils/capitalizeString'
+import { excludePromptFromSuggestion } from '@/utils/excludePromptFromSuggestion'
+import { isSentence } from '@/utils/isSentence'
+import { mergePromptWithSuggestion } from '@/utils/mergePromptWithSuggestion'
+import { useNhostClient } from '@nhost/nextjs'
+import debounce from 'lodash.debounce'
 import {
   ChangeEvent,
   DetailedHTMLProps,
@@ -12,9 +16,8 @@ import {
   useEffect,
   useRef,
   useState,
-} from "react";
-import { twMerge } from "tailwind-merge";
-import ActivityIndicator from "../ActivityIndicator/ActivityIndicator";
+} from 'react'
+import { twMerge } from 'tailwind-merge'
 
 export interface CowriterTextAreaProps
   extends DetailedHTMLProps<
@@ -26,46 +29,7 @@ export interface CowriterTextAreaProps
    *
    * @default 750
    */
-  debounceTime?: number;
-}
-
-function excludePromptFromSuggestion(prompt: string, suggestion: string) {
-  const lowerPrompt = prompt.toLowerCase();
-  const lowerSuggestion = suggestion.toLowerCase();
-  let index = 0;
-
-  // Iterate over the characters in the lowercased suggestion and compare them with the characters in the lowercased prompt
-  for (let i = 0; i < lowerSuggestion.length; i++) {
-    const suggestionSubstring = lowerSuggestion.substring(0, i + 1);
-    const promptEndSubstring = lowerPrompt.substring(
-      lowerPrompt.length - i - 1
-    );
-
-    if (suggestionSubstring === promptEndSubstring) {
-      index = i + 1;
-    }
-  }
-
-  // Return the remaining part of the original suggestion
-  return suggestion.substring(index);
-}
-
-function mergePromptWithSuggestion(prompt: string, suggestion: string) {
-  if (!prompt) {
-    return "";
-  }
-
-  if (!suggestion) {
-    return prompt;
-  }
-
-  return `${prompt}${suggestion}${
-    suggestion.endsWith("!") || suggestion.endsWith("?") ? "" : "."
-  }`;
-}
-
-function capitalizeString(string: string) {
-  return string.charAt(0).toUpperCase() + string.slice(1);
+  debounceTime?: number
 }
 
 function CowriterTextArea(
@@ -76,147 +40,147 @@ function CowriterTextArea(
     debounceTime = 750,
     ...props
   }: CowriterTextAreaProps,
-  ref: ForwardedRef<HTMLTextAreaElement>
+  ref: ForwardedRef<HTMLTextAreaElement>,
 ) {
-  const textAreaWithSuggestionRef = useRef<HTMLTextAreaElement>(null);
-  const client = useNhostClient();
-  const [prompt, setPrompt] = useState<string>("");
-  const [text, setText] = useState<string>("");
-  const [suggestion, setSuggestion] = useState<string>("");
-  const [error, setError] = useState<string>("");
-  const [loading, setLoading] = useState<boolean>(false);
-  const textWithSuggestion = mergePromptWithSuggestion(prompt, suggestion);
+  const textAreaWithSuggestionRef = useRef<HTMLTextAreaElement>(null)
+  const client = useNhostClient()
+  const [prompt, setPrompt] = useState<string>('')
+  const [text, setText] = useState<string>('')
+  const [suggestion, setSuggestion] = useState<string>('')
+  const [error, setError] = useState<string>('')
+  const [loading, setLoading] = useState<boolean>(false)
+  const textWithSuggestion = mergePromptWithSuggestion(prompt, suggestion)
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const debouncedChange = useCallback(
     debounce(async (newPrompt: string) => {
-      setError("");
+      setError('')
 
-      if (!newPrompt && !newPrompt.endsWith(" ")) {
-        setSuggestion("");
+      if (!newPrompt && !newPrompt.endsWith(' ')) {
+        setSuggestion('')
 
-        return;
+        return
       }
 
-      setLoading(true);
+      setLoading(true)
 
       try {
         const { res, error } = await client.functions.call<{
-          suggestion: string;
-        }>("/autocomplete", { prompt: newPrompt });
+          suggestion: string
+        }>('/autocomplete', { prompt: newPrompt })
 
         if (error) {
-          console.error(error);
-          setError(error.message);
+          console.error(error)
+          setError(error.message)
 
-          return;
+          return
         }
 
-        const suggestion = res?.data?.suggestion || "";
-        const trimmedNewPrompt = newPrompt.trim();
+        const suggestion = res?.data?.suggestion || ''
+        const trimmedNewPrompt = newPrompt.trim()
 
         if (
-          trimmedNewPrompt.endsWith(".") ||
-          trimmedNewPrompt.endsWith("!") ||
-          trimmedNewPrompt.endsWith("?")
+          trimmedNewPrompt.endsWith('.') ||
+          trimmedNewPrompt.endsWith('!') ||
+          trimmedNewPrompt.endsWith('?')
         ) {
-          setSuggestion(capitalizeString(suggestion));
-          return;
+          setSuggestion(capitalizeString(suggestion))
+          return
         }
 
-        setSuggestion(suggestion);
+        setSuggestion(suggestion)
       } catch (error) {
-        console.error(error);
-        setError((error as Error).message);
+        console.error(error)
+        setError((error as Error).message)
       } finally {
-        setLoading(false);
+        setLoading(false)
       }
     }, debounceTime),
-    [client.functions, debounceTime]
-  );
+    [client.functions, debounceTime],
+  )
 
   useEffect(() => {
-    if (prompt === "") {
-      return;
+    if (prompt === '') {
+      return
     }
 
-    debouncedChange(prompt);
+    debouncedChange(prompt)
 
     return () => {
-      debouncedChange.cancel();
-    };
-  }, [prompt, debouncedChange]);
+      debouncedChange.cancel()
+    }
+  }, [prompt, debouncedChange])
 
   function handleChange(event: ChangeEvent<HTMLTextAreaElement>) {
-    onChange?.(event);
+    onChange?.(event)
 
-    const updatedValue = event.target.value;
+    const updatedValue = event.target.value
 
-    setText(updatedValue);
-    setPrompt(updatedValue);
+    setText(updatedValue)
+    setPrompt(updatedValue)
 
     const updatedSuggestion = excludePromptFromSuggestion(
       updatedValue,
-      suggestion
-    );
+      suggestion,
+    )
 
     if (!suggestion.startsWith(updatedValue.charAt(updatedValue.length - 1))) {
-      setSuggestion("");
+      setSuggestion('')
 
-      return;
+      return
     }
 
-    setSuggestion(updatedSuggestion);
+    setSuggestion(updatedSuggestion)
   }
 
   function handleKeyDown(event: KeyboardEvent<HTMLTextAreaElement>) {
-    onKeyDown?.(event);
+    onKeyDown?.(event)
 
-    if (event.key !== "Tab") {
-      return;
+    if (event.key !== 'Tab') {
+      return
     }
 
-    event.preventDefault();
+    event.preventDefault()
 
     // Suggestion starts with a capital letter
     if (
       isNaN(parseInt(suggestion.charAt(0))) &&
       suggestion.charAt(0) === suggestion.charAt(0).toUpperCase()
     ) {
-      const isPromptTerminated = isSentence(prompt);
-      const isSuggestionTerminated = isSentence(suggestion);
+      const isPromptTerminated = isSentence(prompt)
+      const isSuggestionTerminated = isSentence(suggestion)
 
       setText(
         `${isPromptTerminated ? prompt : `${prompt.trimEnd()}. `}${
           isSuggestionTerminated ? suggestion : `${suggestion}.`
-        }`.trim()
-      );
-      setSuggestion("");
+        }`.trim(),
+      )
+      setSuggestion('')
 
-      return;
+      return
     }
 
-    const isSuggestionTerminated = isSentence(suggestion);
+    const isSuggestionTerminated = isSentence(suggestion)
 
     setText(
-      `${prompt} ${
+      `${prompt.endsWith(' ') ? prompt : `${prompt} `}${
         isSuggestionTerminated ? suggestion : `${suggestion}.`
-      }`.trim()
-    );
+      }`.trim(),
+    )
 
-    setSuggestion("");
+    setSuggestion('')
   }
 
   return (
     <div className="grid grid-flow-row gap-2">
-      <div className="relative w-full h-52">
+      <div className="relative h-52 w-full rounded-md border-2 border-white border-opacity-10 p-3 focus-within:border-blue-500">
         <textarea
           ref={textAreaWithSuggestionRef}
           className={twMerge(
-            "absolute top-0 left-0 right-0 bottom-0 resize-none rounded-md",
-            "border-2 border-transparent p-3 text-white text-opacity-50 bg-transparent",
-            "focus:outline-none",
-            className
+            'absolute top-0 left-0 bottom-0 right-0',
+            'resize-none rounded-md',
+            'bg-transparent text-white text-opacity-50 focus:outline-none',
+            className,
           )}
           readOnly
           {...props}
@@ -226,27 +190,46 @@ function CowriterTextArea(
         <textarea
           ref={ref}
           className={twMerge(
-            "absolute top-0 left-0 right-0 rounded-md bottom-0 bg-transparent p-3 resize-none",
-            "motion-safe:transition-colors",
-            "border-2 border-white border-opacity-10 bg-transparent",
-            "focus:border-blue-500 focus:outline-none",
-            className
+            'absolute top-0 left-0 bottom-0 right-0',
+            'resize-none rounded-md',
+            'bg-transparent focus:outline-none motion-safe:transition-colors',
+            className,
           )}
           onChange={handleChange}
           onKeyDown={handleKeyDown}
           onScroll={(event) => {
             if (!(event.target instanceof HTMLTextAreaElement)) {
-              return;
+              return
             }
 
             textAreaWithSuggestionRef.current?.scrollTo({
               top: event.target.scrollTop,
-            });
+            })
           }}
           {...props}
           value={text}
           placeholder="Enter your text here..."
         />
+
+        <button className="absolute bottom-2 right-2 grid grid-flow-col items-center gap-2 rounded-md bg-blue-500 p-2 text-sm hover:bg-blue-600 motion-safe:transition-colors">
+          <svg
+            width="16"
+            height="16"
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 16 16"
+            aria-label="Checkmark"
+            className="h-3 w-3"
+          >
+            <path
+              d="m13.5 4.5-7 7L3 8"
+              stroke="currentColor"
+              fill="none"
+              strokeWidth="2"
+              strokeLinejoin="round"
+            />
+          </svg>
+          Accept
+        </button>
       </div>
 
       {error && <p className="text-red-500">Error: {error}</p>}
@@ -255,6 +238,6 @@ function CowriterTextArea(
         <ActivityIndicator label="Fetching suggestion..." delay={500} />
       )}
     </div>
-  );
+  )
 }
-export default forwardRef(CowriterTextArea);
+export default forwardRef(CowriterTextArea)

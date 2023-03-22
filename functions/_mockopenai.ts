@@ -1,12 +1,12 @@
 const staticSuggestionList = [
-  "is a very nice person",
-  "This is a very good opportunity",
-  "some weird stuff",
-  "\n\nTest suggestion comes here",
-  "\nThis is a sample suggestion here",
-  " this starts with a space",
-  "this ends with an exclamation mark!",
-];
+  'is a very nice person',
+  'This is a very good opportunity',
+  'some weird stuff',
+  '\n\nTest suggestion comes here',
+  '\nThis is a sample suggestion here',
+  ' this starts with a space',
+  'this ends with an exclamation mark!',
+]
 
 const openai = {
   createCompletion: async (_params: any) => {
@@ -20,9 +20,9 @@ const openai = {
           },
         ],
       },
-    });
-    return { data };
+    })
+    return { data }
   },
-};
+}
 
-export default openai;
+export default openai
