@@ -6,11 +6,11 @@
  * @returns The suggestion without the prompt.
  */
 export default function excludePromptFromSuggestion(
-  prompt: string,
-  suggestion: string,
+  prompt?: string,
+  suggestion?: string,
 ) {
   if (!prompt) {
-    return suggestion
+    return suggestion || ''
   }
 
   if (!suggestion) {

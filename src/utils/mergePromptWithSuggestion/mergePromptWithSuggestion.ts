@@ -1,3 +1,5 @@
+import { isSentence } from '@/utils/isSentence'
+
 /**
  * Merges the prompt with the suggestion. If the suggestion ends with a question
  * mark or an exclamation mark, no period is added.
@@ -7,8 +9,8 @@
  * @returns The merged prompt and suggestion.
  */
 export default function mergePromptWithSuggestion(
-  prompt: string,
-  suggestion: string,
+  prompt?: string,
+  suggestion?: string,
 ) {
   if (!prompt) {
     return ''
@@ -18,7 +20,5 @@ export default function mergePromptWithSuggestion(
     return prompt
   }
 
-  return `${prompt}${suggestion}${
-    suggestion.endsWith('!') || suggestion.endsWith('?') ? '' : '.'
-  }`
+  return `${prompt}${suggestion}${isSentence(suggestion) ? '' : '.'}`
 }

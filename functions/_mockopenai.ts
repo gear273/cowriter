@@ -6,6 +6,9 @@ const staticSuggestionList = [
   '\nThis is a sample suggestion here',
   ' this starts with a space',
   'this ends with an exclamation mark!',
+  'this is a very long suggestion that will be a bit annoying to read\n\nbut it is a good test',
+  'this is another very long suggestion that will be a bit annoying to read',
+  'This is a lorem ipsum suggestion. This should be another very long suggestion that will be a bit annoying to read',
 ]
 
 const openai = {

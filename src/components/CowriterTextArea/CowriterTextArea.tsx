@@ -1,5 +1,5 @@
 import { ActivityIndicator } from '@/components/ActivityIndicator'
-import { capitalizeString } from '@/utils/capitalizeString'
+import { useSuggestion } from '@/hooks/useSuggestion'
 import { excludePromptFromSuggestion } from '@/utils/excludePromptFromSuggestion'
 import { isSentence } from '@/utils/isSentence'
 import { mergePromptWithSuggestion } from '@/utils/mergePromptWithSuggestion'
@@ -43,59 +43,50 @@ function CowriterTextArea(
   }: CowriterTextAreaProps,
   ref: ForwardedRef<HTMLTextAreaElement>,
 ) {
-  const editableTextAreaRef = useRef<HTMLTextAreaElement>(null)
-  const textAreaWithSuggestionRef = useRef<HTMLTextAreaElement>(null)
   const client = useNhostClient()
+
+  const promptRef = useRef<HTMLTextAreaElement>(null)
+  const suggestionRef = useRef<HTMLTextAreaElement>(null)
+
+  const [suggestionAccepted, setSuggestionAccepted] = useState<boolean>(false)
+
+  // the latest prompt
   const [prompt, setPrompt] = useState<string>('')
+
+  // the text containing the latest prompt and the suggestion
   const [text, setText] = useState<string>('')
-  const [suggestion, setSuggestion] = useState<string>('')
-  const [error, setError] = useState<string>('')
-  const [loading, setLoading] = useState<boolean>(false)
-  const textWithSuggestion = mergePromptWithSuggestion(prompt, suggestion)
+
+  const {
+    data: fetchedSuggestion,
+    error,
+    isFetching,
+    refetch: refetchAutocomplete,
+  } = useSuggestion(prompt)
+
+  // currently active suggestion or an empty string if the current suggestion
+  // is already accepted
+  const suggestion = !suggestionAccepted
+    ? excludePromptFromSuggestion(prompt, fetchedSuggestion)
+    : ''
+
+  // the prompt with the suggestion merged
+  const promptWithSuggestion = mergePromptWithSuggestion(prompt, suggestion)
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const debouncedChange = useCallback(
     debounce(async (newPrompt: string) => {
-      setError('')
-
       if (!newPrompt && !newPrompt.endsWith(' ')) {
-        setSuggestion('')
+        setSuggestionAccepted(true)
 
         return
       }
 
-      setLoading(true)
-
       try {
-        const { res, error } = await client.functions.call<{
-          suggestion: string
-        }>('/autocomplete', { prompt: newPrompt })
+        await refetchAutocomplete()
 
-        if (error) {
-          console.error(error)
-          setError(error.message)
-
-          return
-        }
-
-        const suggestion = res?.data?.suggestion || ''
-        const trimmedNewPrompt = newPrompt.trim()
-
-        if (
-          trimmedNewPrompt.endsWith('.') ||
-          trimmedNewPrompt.endsWith('!') ||
-          trimmedNewPrompt.endsWith('?')
-        ) {
-          setSuggestion(capitalizeString(suggestion))
-          return
-        }
-
-        setSuggestion(suggestion)
+        setSuggestionAccepted(false)
       } catch (error) {
         console.error(error)
-        setError((error as Error).message)
-      } finally {
-        setLoading(false)
       }
     }, debounceTime),
     [client.functions, debounceTime],
@@ -121,21 +112,18 @@ function CowriterTextArea(
     setText(updatedValue)
     setPrompt(updatedValue)
 
-    const updatedSuggestion = excludePromptFromSuggestion(
-      updatedValue,
-      suggestion,
-    )
-
-    if (!suggestion.startsWith(updatedValue.charAt(updatedValue.length - 1))) {
-      setSuggestion('')
-
+    if (suggestion?.startsWith(updatedValue.charAt(updatedValue.length - 1))) {
       return
     }
 
-    setSuggestion(updatedSuggestion)
+    setSuggestionAccepted(true)
   }
 
   function acceptSuggestion() {
+    if (!suggestion) {
+      return
+    }
+
     // Suggestion starts with a capital letter
     if (
       isNaN(parseInt(suggestion.charAt(0))) &&
@@ -149,7 +137,8 @@ function CowriterTextArea(
           isSuggestionTerminated ? suggestion : `${suggestion}.`
         }`.trim(),
       )
-      setSuggestion('')
+
+      setSuggestionAccepted(true)
 
       return
     }
@@ -162,7 +151,7 @@ function CowriterTextArea(
       }`.trim(),
     )
 
-    setSuggestion('')
+    setSuggestionAccepted(true)
   }
 
   function handleKeyDown(event: KeyboardEvent<HTMLTextAreaElement>) {
@@ -180,7 +169,7 @@ function CowriterTextArea(
     <div className="grid grid-flow-row gap-2">
       <div className="relative h-64 w-full rounded-md border-2 border-white border-opacity-10 focus-within:border-blue-500">
         <textarea
-          ref={textAreaWithSuggestionRef}
+          ref={suggestionRef}
           className={twMerge(
             'absolute top-0 left-0 bottom-0 right-0 p-3',
             'resize-none rounded-md',
@@ -189,11 +178,11 @@ function CowriterTextArea(
           )}
           readOnly
           {...props}
-          value={textWithSuggestion}
+          value={promptWithSuggestion}
         />
 
         <textarea
-          ref={mergeRefs([ref, editableTextAreaRef])}
+          ref={mergeRefs([ref, promptRef])}
           className={twMerge(
             'absolute top-0 left-0 bottom-0 right-0 p-3',
             'resize-none rounded-md',
@@ -207,7 +196,7 @@ function CowriterTextArea(
               return
             }
 
-            textAreaWithSuggestionRef.current?.scrollTo({
+            suggestionRef.current?.scrollTo({
               top: event.target.scrollTop,
             })
           }}
@@ -221,7 +210,7 @@ function CowriterTextArea(
             className="absolute bottom-2 right-2 grid grid-flow-col items-center gap-2 rounded-md bg-blue-500 p-2 text-sm hover:bg-blue-600 motion-safe:transition-colors md:hidden"
             onClick={() => {
               acceptSuggestion()
-              editableTextAreaRef.current?.focus()
+              promptRef.current?.focus()
             }}
           >
             <svg
@@ -245,9 +234,9 @@ function CowriterTextArea(
         )}
       </div>
 
-      {error && <p className="text-red-500">Error: {error}</p>}
+      {error && <p className="text-red-500">Error: {error.message}</p>}
 
-      {loading && (
+      {isFetching && (
         <ActivityIndicator label="Fetching suggestion..." delay={500} />
       )}
     </div>
