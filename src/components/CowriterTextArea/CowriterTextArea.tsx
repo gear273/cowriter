@@ -17,6 +17,7 @@ import {
   useRef,
   useState,
 } from 'react'
+import { mergeRefs } from 'react-merge-refs'
 import { twMerge } from 'tailwind-merge'
 
 export interface CowriterTextAreaProps
@@ -42,6 +43,7 @@ function CowriterTextArea(
   }: CowriterTextAreaProps,
   ref: ForwardedRef<HTMLTextAreaElement>,
 ) {
+  const editableTextAreaRef = useRef<HTMLTextAreaElement>(null)
   const textAreaWithSuggestionRef = useRef<HTMLTextAreaElement>(null)
   const client = useNhostClient()
   const [prompt, setPrompt] = useState<string>('')
@@ -133,15 +135,7 @@ function CowriterTextArea(
     setSuggestion(updatedSuggestion)
   }
 
-  function handleKeyDown(event: KeyboardEvent<HTMLTextAreaElement>) {
-    onKeyDown?.(event)
-
-    if (event.key !== 'Tab') {
-      return
-    }
-
-    event.preventDefault()
-
+  function acceptSuggestion() {
     // Suggestion starts with a capital letter
     if (
       isNaN(parseInt(suggestion.charAt(0))) &&
@@ -171,13 +165,24 @@ function CowriterTextArea(
     setSuggestion('')
   }
 
+  function handleKeyDown(event: KeyboardEvent<HTMLTextAreaElement>) {
+    onKeyDown?.(event)
+
+    if (event.key !== 'Tab') {
+      return
+    }
+
+    event.preventDefault()
+    acceptSuggestion()
+  }
+
   return (
     <div className="grid grid-flow-row gap-2">
-      <div className="relative h-52 w-full rounded-md border-2 border-white border-opacity-10 p-3 focus-within:border-blue-500">
+      <div className="relative h-64 w-full rounded-md border-2 border-white border-opacity-10 focus-within:border-blue-500">
         <textarea
           ref={textAreaWithSuggestionRef}
           className={twMerge(
-            'absolute top-0 left-0 bottom-0 right-0',
+            'absolute top-0 left-0 bottom-0 right-0 p-3',
             'resize-none rounded-md',
             'bg-transparent text-white text-opacity-50 focus:outline-none',
             className,
@@ -188,9 +193,9 @@ function CowriterTextArea(
         />
 
         <textarea
-          ref={ref}
+          ref={mergeRefs([ref, editableTextAreaRef])}
           className={twMerge(
-            'absolute top-0 left-0 bottom-0 right-0',
+            'absolute top-0 left-0 bottom-0 right-0 p-3',
             'resize-none rounded-md',
             'bg-transparent focus:outline-none motion-safe:transition-colors',
             className,
@@ -211,25 +216,33 @@ function CowriterTextArea(
           placeholder="Enter your text here..."
         />
 
-        <button className="absolute bottom-2 right-2 grid grid-flow-col items-center gap-2 rounded-md bg-blue-500 p-2 text-sm hover:bg-blue-600 motion-safe:transition-colors">
-          <svg
-            width="16"
-            height="16"
-            xmlns="http://www.w3.org/2000/svg"
-            viewBox="0 0 16 16"
-            aria-label="Checkmark"
-            className="h-3 w-3"
+        {suggestion && (
+          <button
+            className="absolute bottom-2 right-2 grid grid-flow-col items-center gap-2 rounded-md bg-blue-500 p-2 text-sm hover:bg-blue-600 motion-safe:transition-colors md:hidden"
+            onClick={() => {
+              acceptSuggestion()
+              editableTextAreaRef.current?.focus()
+            }}
           >
-            <path
-              d="m13.5 4.5-7 7L3 8"
-              stroke="currentColor"
-              fill="none"
-              strokeWidth="2"
-              strokeLinejoin="round"
-            />
-          </svg>
-          Accept
-        </button>
+            <svg
+              width="16"
+              height="16"
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 16 16"
+              aria-label="Checkmark"
+              className="h-3 w-3"
+            >
+              <path
+                d="m13.5 4.5-7 7L3 8"
+                stroke="currentColor"
+                fill="none"
+                strokeWidth="2"
+                strokeLinejoin="round"
+              />
+            </svg>
+            Accept
+          </button>
+        )}
       </div>
 
       {error && <p className="text-red-500">Error: {error}</p>}
