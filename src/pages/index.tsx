@@ -14,7 +14,8 @@ export default function Home() {
         <p className="my-2">
           Use this text area to test Cowriter&apos;s capabilities:
         </p>
-        <CowriterTextArea className="w-full" rows={8} />
+
+        <CowriterTextArea className="w-full" />
       </div>
     </div>
   );
