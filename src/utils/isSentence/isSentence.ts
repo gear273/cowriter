@@ -4,6 +4,7 @@ export default function isSentence(text: string) {
   return (
     trimmedText.endsWith(".") ||
     trimmedText.endsWith("!") ||
-    trimmedText.endsWith("?")
+    trimmedText.endsWith("?") ||
+    trimmedText.endsWith(":")
   );
 }

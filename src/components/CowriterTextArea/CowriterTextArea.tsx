@@ -10,6 +10,7 @@ import {
   TextareaHTMLAttributes,
   useCallback,
   useEffect,
+  useRef,
   useState,
 } from "react";
 import { twMerge } from "tailwind-merge";
@@ -77,6 +78,7 @@ function CowriterTextArea(
   }: CowriterTextAreaProps,
   ref: ForwardedRef<HTMLTextAreaElement>
 ) {
+  const textAreaWithSuggestionRef = useRef<HTMLTextAreaElement>(null);
   const client = useNhostClient();
   const [prompt, setPrompt] = useState<string>("");
   const [text, setText] = useState<string>("");
@@ -197,7 +199,7 @@ function CowriterTextArea(
     const isSuggestionTerminated = isSentence(suggestion);
 
     setText(
-      `${prompt.trimEnd()} ${
+      `${prompt} ${
         isSuggestionTerminated ? suggestion : `${suggestion}.`
       }`.trim()
     );
@@ -209,6 +211,7 @@ function CowriterTextArea(
     <div className="grid grid-flow-row gap-2">
       <div className="relative w-full h-52">
         <textarea
+          ref={textAreaWithSuggestionRef}
           className={twMerge(
             "absolute top-0 left-0 right-0 bottom-0 resize-none rounded-md",
             "border-2 border-transparent p-3 text-white text-opacity-50 bg-transparent",
@@ -231,6 +234,15 @@ function CowriterTextArea(
           )}
           onChange={handleChange}
           onKeyDown={handleKeyDown}
+          onScroll={(event) => {
+            if (!(event.target instanceof HTMLTextAreaElement)) {
+              return;
+            }
+
+            textAreaWithSuggestionRef.current?.scrollTo({
+              top: event.target.scrollTop,
+            });
+          }}
           {...props}
           value={text}
           placeholder="Enter your text here..."
