@@ -1,5 +1,6 @@
 import { ActivityIndicator } from '@/components/ActivityIndicator'
 import { useSuggestion } from '@/hooks/useSuggestion'
+import { useTouchDevice } from '@/hooks/useTouchDevice'
 import { excludePromptFromSuggestion } from '@/utils/excludePromptFromSuggestion'
 import { generateText } from '@/utils/generateText'
 import { mergePromptWithSuggestion } from '@/utils/mergePromptWithSuggestion'
@@ -45,6 +46,8 @@ function CowriterTextArea(
 ) {
   const promptRef = useRef<HTMLTextAreaElement>(null)
   const suggestionRef = useRef<HTMLTextAreaElement>(null)
+
+  const isTouchDevice = useTouchDevice()
 
   const [suggestionAccepted, setSuggestionAccepted] = useState<boolean>(false)
 
@@ -206,9 +209,9 @@ function CowriterTextArea(
           </p>
         )}
 
-        {suggestion && (
+        {suggestion && isTouchDevice && (
           <button
-            className="grid grid-flow-col items-center gap-2 justify-self-end rounded-md bg-blue-500 p-2 text-sm hover:bg-blue-600 motion-safe:transition-colors md:hidden"
+            className="grid grid-flow-col items-center gap-2 justify-self-end rounded-md bg-blue-500 p-2 text-sm hover:bg-blue-600 motion-safe:transition-colors"
             onClick={() => {
               acceptSuggestion()
               promptRef.current?.focus()
