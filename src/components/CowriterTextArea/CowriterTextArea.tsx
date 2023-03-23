@@ -191,15 +191,29 @@ function CowriterTextArea(
           {...props}
           value={text}
           placeholder="Enter your text here..."
+          aria-label="Prompt"
         />
+      </div>
+
+      <div className="grid grid-flow-col content-between items-center">
+        {isFetching && (
+          <ActivityIndicator label="Fetching suggestion..." delay={500} />
+        )}
+
+        {error && !isFetching && (
+          <p className="text-xs text-red-500">
+            Error: {error?.message || 'Unknown error'}
+          </p>
+        )}
 
         {suggestion && (
           <button
-            className="absolute bottom-2 right-2 grid grid-flow-col items-center gap-2 rounded-md bg-blue-500 p-2 text-sm hover:bg-blue-600 motion-safe:transition-colors md:hidden"
+            className="grid grid-flow-col items-center gap-2 justify-self-end rounded-md bg-blue-500 p-2 text-sm hover:bg-blue-600 motion-safe:transition-colors md:hidden"
             onClick={() => {
               acceptSuggestion()
               promptRef.current?.focus()
             }}
+            aria-label="Accept"
           >
             <svg
               width="16"
@@ -221,12 +235,6 @@ function CowriterTextArea(
           </button>
         )}
       </div>
-
-      {error && <p className="text-red-500">Error: {error.message}</p>}
-
-      {isFetching && (
-        <ActivityIndicator label="Fetching suggestion..." delay={500} />
-      )}
     </div>
   )
 }
