@@ -11,13 +11,16 @@ Cowriter is inspired by [Copilot](https://copilot.github.com/) and utilizes [Ope
 
 ## Setup
 
-First, set up the environment variables in the `.env.development` file for the Nhost backend.
+First, set up the environment variables in the `.env.development` file for the Nhost backend and the frontend:
 
 ```bash
+# For the Nhost backend
 MOCK_ENABLED=true
 OPENAI_API_ORG=<your-openai-org-id>
 OPENAI_API_KEY=<your-openai-api-key>
 ALLOWED_ORIGIN=*
+
+# For the frontend
 NEXT_PUBLIC_NHOST_SUBDOMAIN=<your-nhost-subdomain>
 NEXT_PUBLIC_NHOST_REGION=<your-nhost-region>
 ```
