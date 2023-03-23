@@ -1,9 +1,8 @@
 import { ActivityIndicator } from '@/components/ActivityIndicator'
 import { useSuggestion } from '@/hooks/useSuggestion'
 import { excludePromptFromSuggestion } from '@/utils/excludePromptFromSuggestion'
-import { isSentence } from '@/utils/isSentence'
+import { generateText } from '@/utils/generateText'
 import { mergePromptWithSuggestion } from '@/utils/mergePromptWithSuggestion'
-import { useNhostClient } from '@nhost/nextjs'
 import debounce from 'lodash.debounce'
 import {
   ChangeEvent,
@@ -12,6 +11,7 @@ import {
   forwardRef,
   KeyboardEvent,
   TextareaHTMLAttributes,
+  UIEvent,
   useCallback,
   useEffect,
   useRef,
@@ -43,8 +43,6 @@ function CowriterTextArea(
   }: CowriterTextAreaProps,
   ref: ForwardedRef<HTMLTextAreaElement>,
 ) {
-  const client = useNhostClient()
-
   const promptRef = useRef<HTMLTextAreaElement>(null)
   const suggestionRef = useRef<HTMLTextAreaElement>(null)
 
@@ -60,7 +58,7 @@ function CowriterTextArea(
     data: fetchedSuggestion,
     error,
     isFetching,
-    refetch: refetchAutocomplete,
+    refetch: refetchSuggestion,
   } = useSuggestion(prompt)
 
   // currently active suggestion or an empty string if the current suggestion
@@ -69,27 +67,36 @@ function CowriterTextArea(
     ? excludePromptFromSuggestion(prompt, fetchedSuggestion)
     : ''
 
-  // the prompt with the suggestion merged
-  const promptWithSuggestion = mergePromptWithSuggestion(prompt, suggestion)
+  // the prompt + suggestion if the suggestion is not accepted, otherwise
+  // the complete text
+  const promptWithSuggestion = !suggestionAccepted
+    ? mergePromptWithSuggestion(prompt, suggestion)
+    : text
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  const debouncedChange = useCallback(
-    debounce(async (newPrompt: string) => {
-      if (!newPrompt && !newPrompt.endsWith(' ')) {
-        setSuggestionAccepted(true)
+  useEffect(() => {
+    if (!suggestion || !promptRef.current) {
+      return
+    }
+  }, [suggestion])
 
-        return
-      }
+  const createDebouncedChange = useCallback(
+    () =>
+      debounce(async (newPrompt: string) => {
+        if (!newPrompt && !newPrompt.endsWith(' ')) {
+          setSuggestionAccepted(true)
 
-      try {
-        await refetchAutocomplete()
+          return
+        }
 
-        setSuggestionAccepted(false)
-      } catch (error) {
-        console.error(error)
-      }
-    }, debounceTime),
-    [client.functions, debounceTime],
+        try {
+          await refetchSuggestion()
+
+          setSuggestionAccepted(false)
+        } catch (error) {
+          console.error(error)
+        }
+      }, debounceTime),
+    [debounceTime, refetchSuggestion],
   )
 
   useEffect(() => {
@@ -97,12 +104,14 @@ function CowriterTextArea(
       return
     }
 
+    const debouncedChange = createDebouncedChange()
+
     debouncedChange(prompt)
 
     return () => {
       debouncedChange.cancel()
     }
-  }, [prompt, debouncedChange])
+  }, [createDebouncedChange, prompt])
 
   function handleChange(event: ChangeEvent<HTMLTextAreaElement>) {
     onChange?.(event)
@@ -112,6 +121,8 @@ function CowriterTextArea(
     setText(updatedValue)
     setPrompt(updatedValue)
 
+    // if the user is typing the same character that the suggestion starts with,
+    // don't hide the suggestion by marking it as accepted
     if (suggestion?.startsWith(updatedValue.charAt(updatedValue.length - 1))) {
       return
     }
@@ -124,33 +135,7 @@ function CowriterTextArea(
       return
     }
 
-    // Suggestion starts with a capital letter
-    if (
-      isNaN(parseInt(suggestion.charAt(0))) &&
-      suggestion.charAt(0) === suggestion.charAt(0).toUpperCase()
-    ) {
-      const isPromptTerminated = isSentence(prompt)
-      const isSuggestionTerminated = isSentence(suggestion)
-
-      setText(
-        `${isPromptTerminated ? prompt : `${prompt.trimEnd()}. `}${
-          isSuggestionTerminated ? suggestion : `${suggestion}.`
-        }`.trim(),
-      )
-
-      setSuggestionAccepted(true)
-
-      return
-    }
-
-    const isSuggestionTerminated = isSentence(suggestion)
-
-    setText(
-      `${prompt.endsWith(' ') ? prompt : `${prompt} `}${
-        isSuggestionTerminated ? suggestion : `${suggestion}.`
-      }`.trim(),
-    )
-
+    setText(generateText(prompt, suggestion))
     setSuggestionAccepted(true)
   }
 
@@ -163,6 +148,17 @@ function CowriterTextArea(
 
     event.preventDefault()
     acceptSuggestion()
+  }
+
+  function synchronizeScroll(event: UIEvent<HTMLTextAreaElement>) {
+    if (!(event.target instanceof HTMLTextAreaElement)) {
+      return
+    }
+
+    // sync scroll positions
+    suggestionRef.current?.scrollTo({
+      top: promptRef.current?.scrollTop,
+    })
   }
 
   return (
@@ -191,15 +187,7 @@ function CowriterTextArea(
           )}
           onChange={handleChange}
           onKeyDown={handleKeyDown}
-          onScroll={(event) => {
-            if (!(event.target instanceof HTMLTextAreaElement)) {
-              return
-            }
-
-            suggestionRef.current?.scrollTo({
-              top: event.target.scrollTop,
-            })
-          }}
+          onScroll={synchronizeScroll}
           {...props}
           value={text}
           placeholder="Enter your text here..."
