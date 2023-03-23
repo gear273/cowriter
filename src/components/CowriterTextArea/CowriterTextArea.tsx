@@ -39,6 +39,7 @@ function CowriterTextArea(
     className,
     onChange,
     onKeyDown,
+    onScroll,
     debounceTime = 750,
     ...props
   }: CowriterTextAreaProps,
@@ -154,6 +155,8 @@ function CowriterTextArea(
   }
 
   function synchronizeScroll(event: UIEvent<HTMLTextAreaElement>) {
+    onScroll?.(event)
+
     if (!(event.target instanceof HTMLTextAreaElement)) {
       return
     }
