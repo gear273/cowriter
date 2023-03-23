@@ -32,11 +32,10 @@ export default async function handler(req: Request, res: Response) {
 
   try {
     const { data } = await openai.createCompletion({
-      model: 'text-curie-001',
+      model: 'text-davinci-003',
       n: 1,
       max_tokens: 300,
-      temperature: req.body.temperature || 0.5,
-      frequency_penalty: 1.0,
+      temperature: req.body.temperature || 0.3,
       stop: '.',
       prompt: req.body.prompt,
       best_of: 3,
