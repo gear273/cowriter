@@ -1,6 +1,6 @@
-import { CodeBlock } from '@/components/CodeBlock';
-import { CowriterTextArea } from '@/components/CowriterTextArea';
-import Head from 'next/head';
+import { CodeBlock } from '@/components/CodeBlock'
+import { CowriterTextArea } from '@/components/CowriterTextArea'
+import Head from 'next/head'
 
 export default function Home() {
   return (
@@ -14,6 +14,11 @@ export default function Home() {
           <h1 className="text-3xl font-semibold">Cowriter</h1>
 
           <p>Use the text area below to test Cowriter&apos;s capabilities.</p>
+
+          <p className="opacity-70">
+            ❗ <strong>Note</strong>: Suggestions are returned by a mock API
+            temporarily and are not guaranteed to be grammatically correct.
+          </p>
         </section>
 
         <section className="grid grid-flow-row gap-2">
@@ -34,5 +39,5 @@ export default function Home() {
         <CowriterTextArea className="w-full" />
       </div>
     </div>
-  );
+  )
 }
